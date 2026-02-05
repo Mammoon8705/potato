@@ -318,7 +318,18 @@ function gravity(){
     loseLife();
   }
 }
+function restartGame(){
+  clearInterval(gravityInterval);
+  heart.classList.remove("explode");
+  gameOverText.style.display = "none";
+  restartBtn.classList.add("hidden");
+  backBtn.classList.add("hidden");
 
+  bgMusic.currentTime = 0;
+  bgMusic.play().catch(()=>{});
+
+  startGame();
+}
 function loseLife(){
   loseSound.pause();
   loseSound.currentTime=0;
