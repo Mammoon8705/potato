@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Love Games</title>
+
+<style>
+body {
+  margin:0;
+  font-family:'Poppins',sans-serif;
+  background: linear-gradient(135deg,#ffdde1,#ee9ca7);
+  height:100vh;
+  overflow:hidden;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+}
+
+.heartht{
+  position:absolute;
+  font-size:40px;
+  opacity:0.25;
+  animation:fly linear forwards;
+  pointer-events: none;
+}
+@keyframes fly{
+  from{transform:translateX(-20vw);}
+  to{transform:translateX(120vw);}
+}
+
+.container{
+  background:white;
+  border-radius:25px;
+  padding:30px;
+  width:90%;
+  max-width:520px;
+  text-align:center;
+  box-shadow:0 20px 40px rgba(0,0,0,0.15);
+  z-index:2;
+}
+
+.hidden{display:none;}
+
+button{
+  padding:14px 28px;
+  margin-top:15px;
+  border-radius:20px;
+  border:none;
+  font-size:17px;
+  cursor:pointer;
+  font-weight:bold;
+  background:#ff4d6d;
+  color:white;
+}
+
+input{
+  padding:12px;
+  border-radius:12px;
+  border:1px solid #ccc;
+  width:80%;
+  margin:10px;
+}
+
+.option{
+  background:#ffe6ec;
+  border-radius:15px;
+  padding:14px;
+  margin:10px 0;
+  cursor:pointer;
+}
+
+#heart{
+  position:absolute;
+  font-size:70px;
+  cursor:pointer;
+}
+
+#gameOver{
+  display:none;
+  font-size:26px;
+  color:#ff006e;
+}
+
+.explode{
+  animation:explode 0.6s forwards;
+}
+@keyframes explode{
+  0%{transform:scale(1);opacity:1;}
+  50%{transform:scale(2);}
+  100%{transform:scale(0);opacity:0;}
+}
+</style>
+</head>
+
+<body>
+
+
+
+<!-- PROFILE PAGE -->
+<div class="container" id="profilePage">
+  <h1>Love Games</h1>
+  <input id="boyName" placeholder="Boy Name">
+  <input id="girlName" placeholder="Girl Name">
+  <button onclick="startApp()">Start</button>
+</div>
+
+<!-- MENU PAGE -->
+<div class="container hidden" id="menuPage">
+  <h2 id="title"></h2>
+  <button onclick="startQuiz()">💌 Love Quiz</button>
+  <button onclick="startHeartGame()">❤️ Heart Game</button>
+</div>
+
+<!-- QUIZ PAGE -->
+<div class="container hidden" id="quizPage">
+  <h2 id="question"></h2>
+  <div id="options"></div>
+</div>
+
+<!-- QUIZ RESULT -->
+<div class="container hidden" id="quizResult">
+  <h2>Your Valentine Choices</h2>
+  <div id="plan"></div>
+  <button onclick="backToMenu()">Back to Menu</button>
+</div>
+
+<!-- HEART GAME PAGE -->
+<div class="container hidden" id="heartPage">
+  <h2>❤️ Love Chase</h2>
+  Score: <span id="score">0</span> |
+  Lives: <span id="lives">3</span> |
+  Level: <span id="level">1</span><br>
+  High Score: <span id="highScore">0</span>
+
+  <div id="message">Catch the heart to spread love 💕</div>
+  <div id="heart">❤️</div>
+  <div id="gameOver"></div>
+
+  <button id="restartBtn" onclick="restartGame()" class="hidden">Restart</button>
+  <button id="backBtn" onclick="backToMenu()" class="hidden">Back</button>
+</div>
+
+<!-- AUDIO -->
+<audio id="bgMusic" loop>
+  <source src="music.mp3" type="audio/mpeg">
+</audio>
+
+<audio id="loseSound">
+  <source src="lose.mp3" type="audio/mpeg">
+</audio>
+<script>
+/* ================= PAGE SYSTEM ================= */
+function showPage(id){
+  document.querySelectorAll(".container").forEach(c=>c.classList.add("hidden"));
+  document.getElementById(id).classList.remove("hidden");
+}
+
+/* ================= PROFILE ================= */
+let boy="", girl="";
+function startApp(){
+  boy=document.getElementById("boyName").value;
+  girl=document.getElementById("girlName").value;
+  if(!boy||!girl){alert("Enter both names");return;}
+  document.getElementById("title").innerText=boy+" ❤️ "+girl;
+  showPage("menuPage");
+}
+
+/* ================= QUIZ ================= */
+const questionEl=document.getElementById("question");
+const optionsEl=document.getElementById("options");
+const planEl=document.getElementById("plan");
+
+let itinerary={}, currentQuestion=0;
+
+const questions=[
+["Flowers","Roses or Tulips?",["Roses","Tulips"]],
+["Gift","Chocolate gift or Teddy bear?",["Chocolate gift","Teddy bear"]],
+["Dinner","Candlelight dinner or Pizza + movie night?",["Candlelight dinner","Pizza + movie night"]],
+["Music","Romantic playlist or Rom-com marathon?",["Romantic playlist","Rom-com marathon"]],
+["Words","Love letter or Sweet long text?",["Love letter","Sweet long text"]],
+["Date","City date or Nature date?",["City date","Nature date"]],
+["Affection","Slow dancing or Long cuddles?",["Slow dancing","Long cuddles"]],
+["Surprise","Surprise gift or Surprise date plan?",["Surprise gift","Surprise date plan"]],
+["Privacy","Public hand-holding or Private moments?",["Public hand-holding","Private moments"]],
+["Time","Late-night talks or Early-morning coffee together?",["Late-night talks","Early-morning coffee together"]]
+];
+
+function startQuiz(){
+  itinerary={};
+  currentQuestion=0;
+  showPage("quizPage");
+  showQuestion();
+}
+
+function showQuestion(){
+  const [key,text,opts]=questions[currentQuestion];
+  questionEl.textContent=text;
+  optionsEl.innerHTML="";
+  opts.forEach(opt=>{
+    const div=document.createElement("div");
+    div.className="option";
+    div.textContent=opt;
+    div.onclick=()=>selectOption(key,opt);
+    optionsEl.appendChild(div);
+  });
+}
+
+function selectOption(key,value){
+  itinerary[key]=value;
+  currentQuestion++;
+  currentQuestion<questions.length ? showQuestion() : showFinal();
+}
+
+function showFinal(){
+  showPage("quizResult");
+  planEl.innerHTML=Object.entries(itinerary)
+    .map(([k,v])=>`<p><strong>${k}:</strong> ${v}</p>`).join("");
+}
+
+/* ================= HEART GAME ================= */
+let score=0,lives=3,level=1,fallSpeed=2,gravityInterval=null;
+let gameActive=false;
+
+const heart=document.getElementById("heart");
+const gameOverText=document.getElementById("gameOver");
+const messageBox=document.getElementById("message");
+const bgMusic=document.getElementById("bgMusic");
+const loseSound=document.getElementById("loseSound");
+const restartBtn=document.getElementById("restartBtn");
+const backBtn=document.getElementById("backBtn");
+
+const messages=[
+"You're adorable 💕","Love is growing 🌸","My heart beats for you 💓",
+"So sweet 🥰","Romance level up 💞","Heart stolen 💗",
+"Pure love 💖","Don't drop me 😳","Hold me tight 💘"
+];
+
+const heartIcons=["❤️","💕","💘","💗","💖"];
+
+let highScore=localStorage.getItem("highScore")||0;
+document.getElementById("highScore").innerText=highScore;
+
+/* ================= BACKGROUND HEARTS ================= */
+function createBackgroundHeart(){
+  const h=document.createElement("div");
+  h.className="heartht";
+  h.innerText=heartIcons[Math.floor(Math.random()*heartIcons.length)];
+  h.style.top=Math.random()*100+"vh";
+  h.style.fontSize=(Math.random()*30+20)+"px";
+  h.style.animationDuration=(Math.random()*20+15)+"s";
+  document.body.appendChild(h);
+  setTimeout(()=>h.remove(),40000);
+}
+setInterval(createBackgroundHeart,2000);
+
+/* ================= MUSIC ================= */
+// Start music immediately on first user interaction
+document.addEventListener("click",()=>{
+  if(bgMusic.paused){
+    bgMusic.volume=0.5;
+    bgMusic.play().catch(()=>{});
+  }
+},{once:true});
+
+/* ================= GAME FLOW ================= */
+function startHeartGame(){
+  showPage("heartPage");
+  startGame();
+}
+
+function startGame(){
+  clearInterval(gravityInterval);
+  gameActive=true;
+  score=0; lives=3; level=1; fallSpeed=2;
+
+  document.getElementById("score").innerText=score;
+  document.getElementById("lives").innerText=lives;
+  document.getElementById("level").innerText=level;
+
+  gameOverText.style.display="none";
+  restartBtn.classList.add("hidden");
+  backBtn.classList.add("hidden");
+
+  heart.classList.remove("explode");
+  messageBox.innerText="Catch the heart to spread love 💕";
+
+  moveHeart();
+  gravityInterval=setInterval(gravity,40);
+}
+
+function moveHeart(){
+  let x=Math.max(0,Math.random()*(window.innerWidth-80));
+  let y=Math.random()*(window.innerHeight/3);
+  heart.style.left=x+"px";
+  heart.style.top=y+"px";
+}
+
+heart.onclick=()=>{
+  if(!gameActive) return;
+
+  score++;
+  document.getElementById("score").innerText=score;
+  messageBox.innerText=messages[Math.floor(Math.random()*messages.length)];
+
+  if(score%5===0){
+    level++;
+    fallSpeed+=1;
+    document.getElementById("level").innerText=level;
+  }
+  moveHeart();
+};
+
+function gravity(){
+  if(!gameActive) return;
+  heart.style.top=heart.offsetTop+fallSpeed+"px";
+  if(heart.offsetTop+heart.offsetHeight>=window.innerHeight){
+    loseLife();
+  }
+}
+
+function loseLife(){
+  loseSound.pause();
+  loseSound.currentTime=0;
+  loseSound.play();
+
+  lives--;
+  document.getElementById("lives").innerText=lives;
+  lives<=0 ? endGame() : moveHeart();
+}
+
+function endGame(){
+  gameActive=false;
+  clearInterval(gravityInterval);
+  bgMusic.pause();
+
+  heart.classList.add("explode");
+
+  if(score>highScore){
+    highScore=score;
+    localStorage.setItem("highScore",highScore);
+    document.getElementById("highScore").innerText=highScore;
+  }
+
+  gameOverText.style.display="block";
+  gameOverText.innerText="Game Over! Final Score: "+score;
+
+  restartBtn.classList.remove("hidden");
+  backBtn.classList.remove("hidden");
+}
+
+/* ================= BACK ================= */
+function backToMenu(){
+  gameActive=false;
+  clearInterval(gravityInterval);
+  bgMusic.play().catch(()=>{});
+  showPage("menuPage");
+}
+</script>
+</body>
+</html>
